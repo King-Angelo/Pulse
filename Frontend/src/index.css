@@ -365,6 +365,209 @@
     color: var(--foreground);
   }
 
+  /* Ensure dark mode background is applied to root elements */
+  html.dark {
+    background-color: #0f172a !important; /* slate-900 */
+    color-scheme: dark;
+  }
+
+  html.dark body {
+    background-color: #0f172a !important; /* slate-900 */
+    color: #f1f5f9 !important; /* slate-100 */
+  }
+
+  html.dark #root {
+    background-color: #0f172a !important; /* slate-900 */
+    min-height: 100vh;
+  }
+
+  /* Force dark backgrounds on main containers when dark mode is active */
+  html.dark .bg-white:not(.dark\:bg-transparent):not(.dark\:bg-white) {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+
+  html.dark [class*="bg-white"]:not([class*="dark:"]) {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+
+  /* Ensure all direct children of #root get dark background */
+  html.dark #root > * {
+    background-color: #0f172a; /* slate-900 */
+  }
+
+  /* Force dark backgrounds on content areas */
+  html.dark div[class*="p-12"],
+  html.dark div[class*="p-8"],
+  html.dark div[class*="min-h-full"],
+  html.dark main,
+  html.dark aside {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+
+  /* Force dark backgrounds on cards/borders */
+  html.dark div[class*="border"][class*="rounded"] {
+    background-color: #1e293b !important; /* slate-800 */
+    border-color: #334155 !important; /* slate-700 */
+  }
+
+  /* Ensure text colors use CSS variables in dark mode (components should use dark:text-* classes) */
+  html.dark {
+    color: var(--foreground);
+  }
+
+  /* Fix placeholder colors in dark mode */
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: #94a3b8 !important; /* slate-400 */
+    opacity: 1;
+  }
+
+  /* Fix input colors in dark mode */
+  html.dark input[type="text"],
+  html.dark input[type="email"],
+  html.dark input[type="password"],
+  html.dark input[type="number"],
+  html.dark input[type="date"],
+  html.dark textarea,
+  html.dark select {
+    background-color: #1e293b !important; /* slate-800 */
+    border-color: #334155 !important; /* slate-700 */
+    color: #f1f5f9 !important; /* slate-100 */
+  }
+
+  /* Fix divider/partition lines in dark mode */
+  html.dark [class*="divide-"],
+  html.dark hr,
+  html.dark [class*="border-"] {
+    border-color: #334155 !important; /* slate-700 */
+  }
+
+  /* Force divider colors for divide-y classes */
+  html.dark .divide-y > *:not(:first-child) {
+    border-top-color: #334155 !important; /* slate-700 */
+  }
+  html.dark .divide-x > *:not(:first-child) {
+    border-left-color: #334155 !important; /* slate-700 */
+  }
+
+  /* Fix icons visibility in dark mode - comprehensive approach for all SVGs */
+  html.dark svg {
+    color: #cbd5e1 !important; /* slate-300 - default for all icons */
+  }
+
+  /* Preserve explicitly colored icons */
+  html.dark svg[class*="text-white"],
+  html.dark svg[class*="dark:text-white"] {
+    color: #ffffff !important;
+  }
+
+  html.dark svg[class*="text-slate-900"],
+  html.dark svg[class*="dark:text-slate-900"] {
+    color: #0f172a !important;
+  }
+
+  html.dark svg[class*="text-slate-100"],
+  html.dark svg[class*="dark:text-slate-100"] {
+    color: #f1f5f9 !important;
+  }
+
+  html.dark svg[class*="text-slate-300"],
+  html.dark svg[class*="dark:text-slate-300"] {
+    color: #cbd5e1 !important;
+  }
+
+  /* Preserve colored icons (red, green, blue, etc.) */
+  html.dark svg[class*="text-red-"],
+  html.dark svg[class*="text-green-"],
+  html.dark svg[class*="text-blue-"],
+  html.dark svg[class*="text-purple-"],
+  html.dark svg[class*="text-orange-"],
+  html.dark svg[class*="text-yellow-"] {
+    /* Keep their explicit colors via class - don't override */
+  }
+
+  /* Force icon visibility in sidebar navigation (unless explicitly colored) */
+  html.dark aside button svg:not([class*="text-white"]):not([class*="text-slate-900"]),
+  html.dark aside nav svg:not([class*="text-white"]):not([class*="text-slate-900"]) {
+    color: #cbd5e1 !important; /* slate-300 */
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  /* Active sidebar item - ensure icons are visible */
+  html.dark aside button.bg-slate-700 svg:not([class*="text-white"]),
+  html.dark aside button[class*="bg-slate-700"] svg:not([class*="text-white"]) {
+    color: #f1f5f9 !important; /* slate-100 */
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  /* Icons inside buttons should be visible (unless explicitly colored) */
+  html.dark button svg:not([class*="text-white"]):not([class*="text-red-"]):not([class*="text-green-"]):not([class*="text-blue-"]),
+  html.dark [role="button"] svg:not([class*="text-white"]),
+  html.dark [type="button"] svg:not([class*="text-white"]) {
+    color: #cbd5e1 !important; /* slate-300 */
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  /* Icons in dropdown menus and dialogs */
+  html.dark [role="menu"] svg:not([class*="text-white"]),
+  html.dark [role="menuitem"] svg:not([class*="text-white"]),
+  html.dark [data-radix-collection-item] svg:not([class*="text-white"]) {
+    color: #cbd5e1 !important; /* slate-300 */
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  /* Fix outline buttons in dark mode - target buttons with border class */
+  html.dark button[class*="border"][class*="bg-background"],
+  html.dark button[class*="border"]:not([class*="bg-"]:not([class*="bg-background"])) {
+    background-color: transparent !important;
+    border-color: #334155 !important; /* slate-700 */
+    color: #f1f5f9 !important; /* slate-100 */
+  }
+
+  html.dark button[class*="border"][class*="bg-background"]:hover,
+  html.dark button[class*="border"]:hover:not([class*="bg-"]:not([class*="bg-background"])) {
+    background-color: #1e293b !important; /* slate-800 */
+    border-color: #475569 !important; /* slate-600 */
+  }
+
+  /* Fix table borders and backgrounds */
+  html.dark table thead {
+    background-color: #1e293b !important; /* slate-800 */
+    border-color: #334155 !important; /* slate-700 */
+  }
+
+  html.dark table tbody tr {
+    border-color: #334155 !important; /* slate-700 */
+  }
+
+  html.dark table tbody tr:hover {
+    background-color: #1e293b !important; /* slate-800 */
+  }
+
+  /* Fix status text and categories in project section */
+  html.dark td p,
+  html.dark th {
+    color: #f1f5f9 !important; /* slate-100 */
+  }
+
+  /* Fix secondary text colors */
+  html.dark .text-slate-600,
+  html.dark [class*="text-slate-600"] {
+    color: #cbd5e1 !important; /* slate-300 */
+  }
+
+  /* Fix muted text colors */
+  html.dark .text-slate-500,
+  html.dark [class*="text-slate-500"],
+  html.dark .text-slate-400,
+  html.dark [class*="text-slate-400"] {
+    color: #94a3b8 !important; /* slate-400 */
+  }
+
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h1 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);

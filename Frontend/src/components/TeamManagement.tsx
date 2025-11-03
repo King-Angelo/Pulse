@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { teamApi, ApiError } from '../lib/api';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,56 +37,9 @@ interface TeamMember {
   avatar: string;
 }
 
-const initialMembers: TeamMember[] = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    role: 'Product Designer',
-    email: 'sarah.j@company.com',
-    initials: 'SJ',
-    tasksCompleted: 24,
-    avatar: 'bg-slate-900'
-  },
-  {
-    id: 2,
-    name: 'Michael Chen',
-    role: 'Frontend Developer',
-    email: 'michael.c@company.com',
-    initials: 'MC',
-    tasksCompleted: 18,
-    avatar: 'bg-slate-700'
-  },
-  {
-    id: 3,
-    name: 'Emily Davis',
-    role: 'Backend Developer',
-    email: 'emily.d@company.com',
-    initials: 'ED',
-    tasksCompleted: 31,
-    avatar: 'bg-slate-600'
-  },
-  {
-    id: 4,
-    name: 'James Wilson',
-    role: 'UX Researcher',
-    email: 'james.w@company.com',
-    initials: 'JW',
-    tasksCompleted: 15,
-    avatar: 'bg-slate-700'
-  },
-  {
-    id: 5,
-    name: 'Lisa Anderson',
-    role: 'Marketing Lead',
-    email: 'lisa.a@company.com',
-    initials: 'LA',
-    tasksCompleted: 22,
-    avatar: 'bg-slate-600'
-  }
-];
-
 export function TeamManagement() {
-  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -93,64 +48,124 @@ export function TeamManagement() {
     name: '',
     role: '',
     email: '',
-    avatar: 'bg-slate-900'
+    avatar: 'bg-slate-900',
+    tasksCompleted: 0
   });
+  const [customRole, setCustomRole] = useState('');
 
-  const handleAddMember = () => {
-    const initials = formData.name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-    
-    const newMember: TeamMember = {
-      id: Math.max(...members.map(m => m.id)) + 1,
-      name: formData.name,
-      role: formData.role,
-      email: formData.email,
-      initials,
-      tasksCompleted: 0,
-      avatar: formData.avatar
-    };
-    
-    setMembers([...members, newMember]);
-    setIsAddDialogOpen(false);
-    setFormData({ name: '', role: '', email: '', avatar: 'bg-slate-900' });
+  // Fetch team members on mount
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const response = await teamApi.getAll();
+      if (response.data) {
+        setMembers(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+      toast.error('Failed to load team members');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditMember = () => {
+  const handleAddMember = async () => {
+    try {
+      const response = await teamApi.create({
+      name: formData.name,
+        role: formData.role === 'Other' ? customRole : formData.role,
+        email: formData.email,
+        avatar: formData.avatar,
+      });
+    
+      if (response.data) {
+        toast.success('Team member added successfully');
+        setMembers([...members, response.data as TeamMember]);
+    setIsAddDialogOpen(false);
+        setFormData({ name: '', role: '', email: '', avatar: 'bg-slate-900', tasksCompleted: 0 });
+        setCustomRole('');
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to add team member');
+      }
+    }
+  };
+
+  const handleEditMember = async () => {
     if (!selectedMember) return;
     
-    const initials = formData.name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-    
+    try {
+      const response = await teamApi.update(selectedMember.id, {
+        name: formData.name,
+        role: formData.role === 'Other' ? customRole : formData.role,
+        email: formData.email,
+        avatar: formData.avatar,
+        tasksCompleted: formData.tasksCompleted,
+      });
+
+      if (response.data) {
+        toast.success('Team member updated successfully');
     setMembers(members.map(m => 
-      m.id === selectedMember.id 
-        ? { ...m, name: formData.name, role: formData.role, email: formData.email, initials, avatar: formData.avatar }
-        : m
+          m.id === selectedMember.id ? response.data as TeamMember : m
     ));
     setIsEditDialogOpen(false);
     setSelectedMember(null);
+        setCustomRole('');
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to update team member');
+      }
+    }
   };
 
-  const handleDeleteMember = () => {
+  const handleDeleteMember = async () => {
     if (!selectedMember) return;
+
+    try {
+      await teamApi.delete(selectedMember.id);
+      toast.success('Team member deleted successfully');
     setMembers(members.filter(m => m.id !== selectedMember.id));
     setIsDeleteDialogOpen(false);
     setSelectedMember(null);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete team member');
+      }
+    }
   };
 
   const openEditDialog = (member: TeamMember) => {
     setSelectedMember(member);
+    // Check if role is in the predefined list, otherwise set to "Other"
+    const predefinedRoles = [
+      'Product Designer', 'UX Designer', 'UI Designer', 'Frontend Developer',
+      'Backend Developer', 'Full Stack Developer', 'DevOps Engineer', 'QA Engineer',
+      'Product Manager', 'Project Manager', 'Scrum Master', 'Business Analyst',
+      'Data Analyst', 'Marketing Lead', 'Sales Representative', 'HR Manager',
+      'Content Writer', 'Graphic Designer'
+    ];
+    const isPredefined = predefinedRoles.includes(member.role);
+    
     setFormData({
       name: member.name,
-      role: member.role,
+      role: isPredefined ? member.role : 'Other',
       email: member.email,
-      avatar: member.avatar
+      avatar: member.avatar,
+      tasksCompleted: member.tasksCompleted
     });
+    setCustomRole(isPredefined ? '' : member.role);
     setIsEditDialogOpen(true);
   };
 
@@ -160,11 +175,11 @@ export function TeamManagement() {
   };
 
   return (
-    <div className="p-12">
+    <div className="p-12 min-h-full">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h2 className="text-slate-900 mb-1">Team Management</h2>
-          <p className="text-slate-500">Manage your team members and their roles</p>
+          <h2 className="text-slate-900 dark:text-slate-100 mb-1">Team Management</h2>
+          <p className="text-slate-500 dark:text-slate-400">Manage your team members and their roles</p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -172,54 +187,67 @@ export function TeamManagement() {
         </Button>
       </div>
 
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
             <tr>
-              <th className="text-left px-6 py-4 text-slate-900">Member</th>
-              <th className="text-left px-6 py-4 text-slate-900">Role</th>
-              <th className="text-left px-6 py-4 text-slate-900">Email</th>
-              <th className="text-left px-6 py-4 text-slate-900">Tasks Completed</th>
-              <th className="text-right px-6 py-4 text-slate-900">Actions</th>
+              <th className="text-left px-6 py-4 text-slate-900 dark:text-slate-100">Member</th>
+              <th className="text-left px-6 py-4 text-slate-900 dark:text-slate-100">Role</th>
+              <th className="text-left px-6 py-4 text-slate-900 dark:text-slate-100">Email</th>
+              <th className="text-left px-6 py-4 text-slate-900 dark:text-slate-100">Tasks</th>
+              <th className="text-right px-6 py-4 text-slate-900 dark:text-slate-100">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {members.map((member) => (
-              <tr key={member.id} className="border-b border-slate-100 last:border-0">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    Loading team members...
+                  </td>
+                </tr>
+              ) : members.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    No team members yet. Add your first member to get started.
+                  </td>
+                </tr>
+              ) : (
+                members.map((member) => (
+              <tr key={member.id} className="border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 ${member.avatar} rounded-full flex items-center justify-center`}>
                       <span className="text-white">{member.initials}</span>
                     </div>
                     <div>
-                      <p className="text-slate-900">{member.name}</p>
+                      <p className="text-slate-900 dark:text-slate-100">{member.name}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-slate-600">{member.role}</p>
+                  <p className="text-slate-600 dark:text-slate-300">{member.role}</p>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-slate-600">{member.email}</p>
+                  <p className="text-slate-600 dark:text-slate-300">{member.email}</p>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-slate-600">{member.tasksCompleted}</p>
+                  <p className="text-slate-600 dark:text-slate-300">{member.tasksCompleted}</p>
                 </td>
                 <td className="px-6 py-4 text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="w-4 h-4" />
+                        <MoreHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEditDialog(member)}>
-                        <Pencil className="w-4 h-4 mr-2" />
+                        <Pencil className="w-4 h-4 mr-2 text-slate-600 dark:text-slate-400" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => openDeleteDialog(member)}
-                        className="text-red-600"
+                        className="text-red-600 dark:text-red-400"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
@@ -228,7 +256,8 @@ export function TeamManagement() {
                   </DropdownMenu>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -254,12 +283,39 @@ export function TeamManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Product Designer">Product Designer</SelectItem>
+                  <SelectItem value="UX Designer">UX Designer</SelectItem>
+                  <SelectItem value="UI Designer">UI Designer</SelectItem>
+                  <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
+                  <SelectItem value="Backend Developer">Backend Developer</SelectItem>
+                  <SelectItem value="Full Stack Developer">Full Stack Developer</SelectItem>
+                  <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
+                  <SelectItem value="QA Engineer">QA Engineer</SelectItem>
+                  <SelectItem value="Product Manager">Product Manager</SelectItem>
+                  <SelectItem value="Project Manager">Project Manager</SelectItem>
+                  <SelectItem value="Scrum Master">Scrum Master</SelectItem>
+                  <SelectItem value="Business Analyst">Business Analyst</SelectItem>
+                  <SelectItem value="Data Analyst">Data Analyst</SelectItem>
+                  <SelectItem value="Marketing Lead">Marketing Lead</SelectItem>
+                  <SelectItem value="Sales Representative">Sales Representative</SelectItem>
+                  <SelectItem value="HR Manager">HR Manager</SelectItem>
+                  <SelectItem value="Content Writer">Content Writer</SelectItem>
+                  <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {formData.role === 'Other' && (
               <Input
-                id="role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                placeholder="Software Engineer"
+                  placeholder="Enter custom role"
+                  value={customRole}
+                  onChange={(e) => setCustomRole(e.target.value)}
               />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -314,11 +370,39 @@ export function TeamManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role">Role</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger id="edit-role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Product Designer">Product Designer</SelectItem>
+                  <SelectItem value="UX Designer">UX Designer</SelectItem>
+                  <SelectItem value="UI Designer">UI Designer</SelectItem>
+                  <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
+                  <SelectItem value="Backend Developer">Backend Developer</SelectItem>
+                  <SelectItem value="Full Stack Developer">Full Stack Developer</SelectItem>
+                  <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
+                  <SelectItem value="QA Engineer">QA Engineer</SelectItem>
+                  <SelectItem value="Product Manager">Product Manager</SelectItem>
+                  <SelectItem value="Project Manager">Project Manager</SelectItem>
+                  <SelectItem value="Scrum Master">Scrum Master</SelectItem>
+                  <SelectItem value="Business Analyst">Business Analyst</SelectItem>
+                  <SelectItem value="Data Analyst">Data Analyst</SelectItem>
+                  <SelectItem value="Marketing Lead">Marketing Lead</SelectItem>
+                  <SelectItem value="Sales Representative">Sales Representative</SelectItem>
+                  <SelectItem value="HR Manager">HR Manager</SelectItem>
+                  <SelectItem value="Content Writer">Content Writer</SelectItem>
+                  <SelectItem value="Graphic Designer">Graphic Designer</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {formData.role === 'Other' && (
               <Input
-                id="edit-role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  placeholder="Enter custom role"
+                  value={customRole}
+                  onChange={(e) => setCustomRole(e.target.value)}
               />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email</Label>
@@ -341,6 +425,17 @@ export function TeamManagement() {
                   <SelectItem value="bg-slate-600">Light</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-tasksCompleted">Tasks Completed</Label>
+              <Input
+                id="edit-tasksCompleted"
+                type="number"
+                min="0"
+                value={formData.tasksCompleted}
+                onChange={(e) => setFormData({ ...formData, tasksCompleted: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
             </div>
           </div>
           <DialogFooter>
