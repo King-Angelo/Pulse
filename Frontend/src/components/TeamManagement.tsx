@@ -76,16 +76,16 @@ export function TeamManagement() {
   const handleAddMember = async () => {
     try {
       const response = await teamApi.create({
-        name: formData.name,
+      name: formData.name,
         role: formData.role === 'Other' ? customRole : formData.role,
         email: formData.email,
         avatar: formData.avatar,
       });
-
+    
       if (response.data) {
         toast.success('Team member added successfully');
         setMembers([...members, response.data as TeamMember]);
-        setIsAddDialogOpen(false);
+    setIsAddDialogOpen(false);
         setFormData({ name: '', role: '', email: '', avatar: 'bg-slate-900', tasksCompleted: 0 });
         setCustomRole('');
       }
@@ -100,7 +100,7 @@ export function TeamManagement() {
 
   const handleEditMember = async () => {
     if (!selectedMember) return;
-
+    
     try {
       const response = await teamApi.update(selectedMember.id, {
         name: formData.name,
@@ -112,11 +112,11 @@ export function TeamManagement() {
 
       if (response.data) {
         toast.success('Team member updated successfully');
-        setMembers(members.map(m => 
+    setMembers(members.map(m => 
           m.id === selectedMember.id ? response.data as TeamMember : m
-        ));
-        setIsEditDialogOpen(false);
-        setSelectedMember(null);
+    ));
+    setIsEditDialogOpen(false);
+    setSelectedMember(null);
         setCustomRole('');
       }
     } catch (error) {
@@ -134,9 +134,9 @@ export function TeamManagement() {
     try {
       await teamApi.delete(selectedMember.id);
       toast.success('Team member deleted successfully');
-      setMembers(members.filter(m => m.id !== selectedMember.id));
-      setIsDeleteDialogOpen(false);
-      setSelectedMember(null);
+    setMembers(members.filter(m => m.id !== selectedMember.id));
+    setIsDeleteDialogOpen(false);
+    setSelectedMember(null);
     } catch (error) {
       if (error instanceof ApiError) {
         toast.error(error.message);
@@ -310,11 +310,11 @@ export function TeamManagement() {
                 </SelectContent>
               </Select>
               {formData.role === 'Other' && (
-                <Input
+              <Input
                   placeholder="Enter custom role"
                   value={customRole}
                   onChange={(e) => setCustomRole(e.target.value)}
-                />
+              />
               )}
             </div>
             <div className="space-y-2">
@@ -397,11 +397,11 @@ export function TeamManagement() {
                 </SelectContent>
               </Select>
               {formData.role === 'Other' && (
-                <Input
+              <Input
                   placeholder="Enter custom role"
                   value={customRole}
                   onChange={(e) => setCustomRole(e.target.value)}
-                />
+              />
               )}
             </div>
             <div className="space-y-2">
