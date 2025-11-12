@@ -10,12 +10,28 @@ This guide will help your team get Pulse running locally in minutes.
 
 ## Quick Start
 
-### 1. Clone the Repository
+### For New Team Members (First Time)
+
+#### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/King-Angelo/Pulse.git
 cd Pulse
 ```
+
+### For Existing Team Members (Updating)
+
+#### 1. Pull Latest Changes
+
+```bash
+# Make sure you're on the main branch
+git checkout main
+
+# Pull the latest changes (includes RLS migration and updates)
+git pull origin main
+```
+
+**Important:** Always pull the latest changes before starting development to ensure you have all migrations and updates!
 
 ### 2. Backend Setup
 
@@ -38,6 +54,7 @@ cp env.template .env
 npm run prisma:generate
 
 # Run database migrations (applies RLS and schema)
+# This is especially important after pulling new migrations!
 npm run prisma:migrate:deploy
 
 # Start the backend server
